@@ -19,9 +19,7 @@ const (
 
 var (
 	registry = prometheus.NewRegistry()
-
-	// TODO: get host by env
-	pusher   = push.New("http://localhost:9091", "machines_monitoring").Gatherer(registry)
+	pusher   = push.New(os.Getenv("PROMETHEUS_PUSHGATEWAY_HOST"), "machines_monitoring").Gatherer(registry)
 
 	latitudeMetric = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -110,8 +108,12 @@ func init() {
 }
 
 func main() {
-	// TODO: get credentials by env
-	conn, err := amqp.Dial(fmt.Sprintf("amqp://user:password@localhost:5672/"))
+	username := os.Getenv("RABBITMQ_USERNAME")
+	password := os.Getenv("RABBITMQ_PASSWORD")
+	host := os.Getenv("RABBITMQ_HOST")
+	port := os.Getenv("RABBITMQ_PORT")
+	queue := os.Getenv("RABBITMQ_QUEUE")
+	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port))
 	if err != nil {
 		log.Fatalf("failed to connect to rabbitmq: %v", err)
 	}
@@ -121,7 +123,7 @@ func main() {
 		log.Fatalf("failed to open a channel: %v", err)
 	}
 
-	msgsCh, err := registerConsumer(ch)
+	msgsCh, err := registerConsumer(ch, queue)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -144,9 +146,9 @@ main_loop:
 	}
 }
 
-func registerConsumer(ch *amqp.Channel) (<-chan amqp.Delivery, error) {
+func registerConsumer(ch *amqp.Channel, queue string) (<-chan amqp.Delivery, error) {
 	q, err := ch.QueueDeclare(
-		"q_metrics",
+		queue,
 		false,
 		false,
 		false,

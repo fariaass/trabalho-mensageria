@@ -3,10 +3,6 @@
 #include <rabbitmq-c/amqp.h>
 #include <rabbitmq-c/tcp_socket.h>
 
-const char *hostname = "localhost";
-const int port = 5672;
-const char *queue_name = "q_irrigators";
-
 char * get_env(char *env) {
     char *env_var_value = getenv(env);
 
@@ -62,6 +58,12 @@ void die_on_amqp_error(amqp_rpc_reply_t x, char const *context) {
 }
 
 int main() {
+    const char *hostname = get_env("RABBITMQ_HOST");
+    const int port = atoi(get_env("RABBITMQ_PORT"));
+    const char *queue_name = get_env("RABBITMQ_QUEUE");
+    const char *username = get_env("RABBITMQ_USERNAME");
+    const char *password = get_env("RABBITMQ_PASSWORD");
+
     amqp_connection_state_t conn;
     amqp_socket_t *socket = NULL;
 
@@ -78,7 +80,7 @@ int main() {
         return 1;
     }
 
-    die_on_amqp_error(amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, get_env("RABBITMQ_USERNAME"), get_env("RABBITMQ_PASSWORD")), "login");
+    die_on_amqp_error(amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username, password), "login");
 
     amqp_channel_open(conn, 1);
     die_on_amqp_error(amqp_get_rpc_reply(conn), "opening channel");

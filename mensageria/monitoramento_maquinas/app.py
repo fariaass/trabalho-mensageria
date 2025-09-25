@@ -5,9 +5,10 @@ import signal
 import sys
 import datetime
 import json
+import os
 
-# TODO: get credentials by env
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost', credentials=pika.PlainCredentials("user", "password")))
+queue = os.getenv("RABBITMQ_QUEUE")
+connection = pika.BlockingConnection(pika.ConnectionParameters(os.getenv("RABBITMQ_HOST"), os.getenv("RABBITMQ_PORT"), credentials=pika.PlainCredentials(os.getenv("RABBITMQ_USERNAME"), os.getenv("RABBITMQ_PASSWORD"))))
 
 def signal_handler(sig, frame):
     global connection
@@ -20,16 +21,15 @@ signal.signal(signal.SIGINT, signal_handler)
 
 channel = connection.channel()
 channel.exchange_declare("e_metrics", pika.exchange_type.ExchangeType.direct)
-channel.queue_declare("q_metrics")
-channel.queue_bind("q_metrics", "e_metrics", "metrics")
+channel.queue_declare(queue)
+channel.queue_bind(queue, "e_metrics", "metrics")
 
 # TODO: generate random metric data
 while True:
     
-    # TODO: get machine name by env
     dados = {
         "metadata": {
-            "name": "machine_01"
+            "name": os.getenv("MACHINE_NAME")
         },
         "metrics": {
             "coordinates": {
