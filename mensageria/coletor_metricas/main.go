@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -27,7 +29,7 @@ var (
 			Help:      "latitude coordinate of machine",
 			Namespace: metricsNamespace,
 		},
-		[]string{},
+		[]string{"cardinal_point"},
 	)
 
 	longitudeMetric = prometheus.NewGaugeVec(
@@ -36,7 +38,7 @@ var (
 			Help:      "longitude coordinate of machine",
 			Namespace: metricsNamespace,
 		},
-		[]string{},
+		[]string{"cardinal_point"},
 	)
 
 	temperatureMetric = prometheus.NewGaugeVec(
@@ -81,8 +83,8 @@ type Metadata struct {
 }
 
 type Coordinates struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
 }
 
 type Metrics struct {
@@ -184,8 +186,36 @@ func enviaMetricas(data []byte) {
 
 	pusher = pusher.Grouping("machine_name", msg.Metadata.Name)
 
-	latitudeMetric.WithLabelValues().Set(msg.Metrics.Coordinates.Latitude)
-	longitudeMetric.WithLabelValues().Set(msg.Metrics.Coordinates.Longitude)
+	latitude_coordinates := msg.Metrics.Coordinates.Latitude
+	coordinates := strings.Split(latitude_coordinates, " ")
+	if len(coordinates) != 2 {
+		fmt.Println("invalid latitude coordinate")
+	} else {
+		latitude := coordinates[0]
+		coordinate, err := strconv.ParseFloat(latitude, 64)
+		if err != nil {
+			fmt.Println("invalid latitude coordinate")
+		}
+	
+		cardinalPoint := coordinates[1]
+		latitudeMetric.WithLabelValues(cardinalPoint).Set(coordinate)
+	}
+	
+	longitude_coordinates := msg.Metrics.Coordinates.Longitude
+	coordinates = strings.Split(longitude_coordinates, " ")
+	if len(coordinates) != 2 {
+		fmt.Println("invalid longitude coordinate")
+	} else {
+		longitude := coordinates[0]
+		coordinate, err := strconv.ParseFloat(longitude, 64)
+		if err != nil {
+			fmt.Println("invalid longitude coordinate")
+		}
+	
+		cardinalPoint := coordinates[1]
+		longitudeMetric.WithLabelValues(cardinalPoint).Set(coordinate)
+	}
+
 	temperatureMetric.WithLabelValues().Set(msg.Metrics.Temperature)
 	cpuUsagePorcMetric.WithLabelValues().Set(msg.Metrics.CPUUsagePorc)
 	memUsagePorcMetric.WithLabelValues().Set(msg.Metrics.MemUsagePorc)

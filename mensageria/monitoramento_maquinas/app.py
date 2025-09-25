@@ -33,8 +33,8 @@ while True:
         },
         "metrics": {
             "coordinates": {
-                "latitude": 70.3,
-                "longitude": 72.4,
+                "latitude": "70.34234 N",
+                "longitude": "72.46523 W",
             },
             "cpu_usage_porc": 0.7,
             "mem_usage_porc": 0.8,
