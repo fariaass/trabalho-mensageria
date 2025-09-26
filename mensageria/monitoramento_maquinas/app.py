@@ -11,6 +11,7 @@ from rand import random
 memory_total_bytes = 1048576
 
 queue = os.getenv("RABBITMQ_QUEUE")
+print(queue)
 connection = pika.BlockingConnection(pika.ConnectionParameters(os.getenv("RABBITMQ_HOST"), os.getenv("RABBITMQ_PORT"), credentials=pika.PlainCredentials(os.getenv("RABBITMQ_USERNAME"), os.getenv("RABBITMQ_PASSWORD"))))
 
 def signal_handler(sig, frame):

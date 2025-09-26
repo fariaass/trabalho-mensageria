@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -137,6 +138,7 @@ main_loop:
 	for {
 		select {
 		case msg := <-msgsCh:
+			log.Printf("[%s] received message: %s", time.Now(), string(msg.Body))
 			sendMetrics(msg.Body)
 
 		case <-c:
