@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -16,7 +17,6 @@ import (
 
 const (
 	metricsNamespace = "machines_monitoring"
-	machineNameLabel = "machine_name"
 )
 
 var (
@@ -131,7 +131,7 @@ func main() {
 	}
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 main_loop:
 	for {

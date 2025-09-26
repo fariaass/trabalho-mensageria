@@ -84,7 +84,43 @@ func registerConsumer(ch *amqp.Channel, queue string) (<-chan amqp.Delivery, err
 	return msgs, nil
 }
 
-func triggerIrrigators(msg []byte) {
-	
+func registerExchanges(ch *amqp.Channel, queue string) (<-chan amqp.Delivery, error) {
+	if err := ch.ExchangeDeclare(
+		"all",
+		amqp.ExchangeFanout,
+		false,
+		false,
+		false,
+		false,
+		nil,
+	); err != nil {
+		return nil, fmt.Errorf("failed to declare \"all\" exchange: %w", err)
+	}
+
+	for i := range 4 {
+		quadrant := fmt.Sprintf("q%d", i+1)
+		if err := ch.ExchangeDeclare(
+			quadrant,
+			amqp.ExchangeTopic,
+			false,
+			false,
+			false,
+			false,
+			nil,
+		); err != nil {
+			return nil, fmt.Errorf("failed to declare \"all\" exchange: %w", err)
+		}
+	} 
+
+	return msgs, nil
+}
+
+func triggerIrrigators(data []byte) {
+	var msg Message
+	if err := json.Unmarshal(data, &msg); err != nil {
+		log.Printf("failed to unmarshal message content: %v", err)
+		return
+	}
+
 
 }
