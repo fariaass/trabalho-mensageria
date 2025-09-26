@@ -185,6 +185,7 @@ func sendMetrics(data []byte) {
 	}
 
 	pusher = pusher.Grouping("machine_name", msg.Metadata.Name)
+	machineNameLabel = "machine_name"
 
 	latitude_coordinates := msg.Metrics.Coordinates.Latitude
 	coordinates := strings.Split(latitude_coordinates, " ")

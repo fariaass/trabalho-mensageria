@@ -44,7 +44,7 @@ while True:
             },
             "cpu_usage_porc": cpu_usage,
             "mem_usage_porc": mem_usage,
-            "mem_usage_bytes": mem_usage * memory_total_bytes,
+            "mem_usage_bytes": int(mem_usage * memory_total_bytes),
             "temperature": temperature
         }
     }
