@@ -137,7 +137,7 @@ main_loop:
 	for {
 		select {
 		case msg := <-msgsCh:
-			enviaMetricas(msg.Body)
+			sendMetrics(msg.Body)
 
 		case <-c:
 			fmt.Println("interrupting...")
@@ -177,7 +177,7 @@ func registerConsumer(ch *amqp.Channel, queue string) (<-chan amqp.Delivery, err
 	return msgs, nil
 }
 
-func enviaMetricas(data []byte) {
+func sendMetrics(data []byte) {
 	var msg Message
 	if err := json.Unmarshal(data, &msg); err != nil {
 		log.Printf("failed to unmarshal message content: %v", err)

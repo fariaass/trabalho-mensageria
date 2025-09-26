@@ -57,4 +57,4 @@ while True:
 
     print(f"[{datetime.datetime.now()}] Metric sent")
 
-    time.sleep(1)
+    time.sleep(5)

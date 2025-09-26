@@ -83,3 +83,8 @@ func registerConsumer(ch *amqp.Channel, queue string) (<-chan amqp.Delivery, err
 
 	return msgs, nil
 }
+
+func triggerIrrigators(msg []byte) {
+	
+
+}
