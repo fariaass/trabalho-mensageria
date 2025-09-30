@@ -8,6 +8,7 @@ Console.WriteLine("Iniciando sensor...");
 var configuration = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddEnvironmentVariables()
     .Build();
 
 // Obter configurações do RabbitMQ
@@ -15,6 +16,9 @@ var rabbitHost = configuration["RabbitMQ:HostName"] ?? "localhost";
 var queueName = configuration["RabbitMQ:QueueName"] ?? "soil-moisture-data";
 var userName = configuration["RabbitMQ:UserName"] ?? "guest";
 var password = configuration["RabbitMQ:Password"] ?? "guest";
+var rabbitPort = 5672;
+if (int.TryParse(configuration["RabbitMQ:Port"], out var port))
+    rabbitPort = port;
 
 // Obter configurações do sensor
 var minInterval = int.Parse(configuration["Sensor:MinIntervalSeconds"] ?? "10");
@@ -30,7 +34,7 @@ var location = configuration["Sensor:Location"] ?? "sector-A";
 
 // Inicializar serviços
 var soilSensorService = new SoilSensorService(sensorId, location);
-var rabbitProducer = await RabbitMQProducer.CreateAsync(rabbitHost, queueName, userName, password);
+var rabbitProducer = await RabbitMqProducer.CreateAsync(rabbitHost, rabbitPort, queueName, userName, password);
 
 var random = new Random();
 

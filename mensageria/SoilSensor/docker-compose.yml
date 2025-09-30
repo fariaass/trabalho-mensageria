@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: soil-sensor-rabbitmq
+    ports:
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - soil-sensor-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  soil-sensor:
+    build:
+      context: .
+      dockerfile: SoilSensor/Dockerfile
+    container_name: soil-sensor-app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__UserName=guest
+      - RabbitMQ__Password=guest
+      - RabbitMQ__QueueName=soil-moisture-data
+      - Sensor__MinIntervalSeconds=10
+      - Sensor__MaxIntervalSeconds=20
+      - Sensor__Location=q1
+      - Sensor__SensorId=soil-monitor-q1-001
+    networks:
+      - soil-sensor-network
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
+
+networks:
+  soil-sensor-network:
+    driver: bridge

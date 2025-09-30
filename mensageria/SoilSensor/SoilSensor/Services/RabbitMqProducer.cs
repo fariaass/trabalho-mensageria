@@ -5,13 +5,13 @@ using SoilSensor.Models;
 
 namespace SoilSensor.Services;
 
-public class RabbitMQProducer : IDisposable
+public class RabbitMqProducer : IDisposable
 {
     private readonly IConnection _connection;
     private readonly IChannel _channel;
     private readonly string _queueName;
 
-    public static async Task<RabbitMQProducer> CreateAsync(string hostName, string queueName, string userName, string password)
+    public static async Task<RabbitMqProducer> CreateAsync(string hostName, int port, string queueName, string userName, string password)
     {
         var factory = new ConnectionFactory
         {
@@ -19,7 +19,7 @@ public class RabbitMQProducer : IDisposable
             UserName = userName,
             Password = password,
             VirtualHost = "/",
-            Port = 5672 // Usando porta padrão do AMQP
+            Port = 5672
         };
 
         var connection = await factory.CreateConnectionAsync();
@@ -34,10 +34,10 @@ public class RabbitMQProducer : IDisposable
             arguments: null
         );
 
-        return new RabbitMQProducer(connection, channel, queueName);
+        return new RabbitMqProducer(connection, channel, queueName);
     }
 
-    private RabbitMQProducer(IConnection connection, IChannel channel, string queueName)
+    private RabbitMqProducer(IConnection connection, IChannel channel, string queueName)
     {
         _connection = connection;
         _channel = channel;
