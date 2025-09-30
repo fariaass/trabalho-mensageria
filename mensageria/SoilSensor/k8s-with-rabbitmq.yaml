@@ -1,0 +1,305 @@
+# SISTEMA COMPLETO: RabbitMQ + Sensores
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: soil-sensor-system
+
+---
+# Secret para RabbitMQ
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-credentials
+  namespace: soil-sensor-system
+type: Opaque
+data:
+  username: Z3Vlc3Q=  # guest
+  password: Z3Vlc3Q=  # guest
+
+---
+# ConfigMap base
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: soil-sensor-base-config
+  namespace: soil-sensor-system
+data:
+  RABBITMQ_HOST: "rabbitmq-service"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_QUEUE: "soil-moisture-data"
+  SENSOR_MIN_INTERVAL: "10"
+  SENSOR_MAX_INTERVAL: "20"
+
+---
+# RabbitMQ Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: soil-sensor-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3-management
+        ports:
+        - containerPort: 5672
+        - containerPort: 15672
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: username
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: password
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+---
+# RabbitMQ Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-service
+  namespace: soil-sensor-system
+spec:
+  type: ClusterIP
+  ports:
+  - name: amqp
+    port: 5672
+    targetPort: 5672
+  - name: management
+    port: 15672
+    targetPort: 15672
+  selector:
+    app: rabbitmq
+
+---
+# Sensor Q1-001
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soil-sensor-q1-001
+  namespace: soil-sensor-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: soil-sensor-q1-001
+  template:
+    metadata:
+      labels:
+        app: soil-sensor-q1-001
+    spec:
+      containers:
+      - name: soil-sensor
+        image: soil-sensor:v1.1
+        env:
+        - name: RabbitMQ__HostName
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: RABBITMQ_HOST
+        - name: RabbitMQ__Port
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: RABBITMQ_PORT
+        - name: RabbitMQ__UserName
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: username
+        - name: RabbitMQ__Password
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: password
+        - name: RabbitMQ__QueueName
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: RABBITMQ_QUEUE
+        - name: Sensor__MinIntervalSeconds
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: SENSOR_MIN_INTERVAL
+        - name: Sensor__MaxIntervalSeconds
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: SENSOR_MAX_INTERVAL
+        - name: Sensor__Location
+          value: "q1"
+        - name: Sensor__SensorId
+          value: "soil-monitor-q1-001"
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+
+---
+# Sensor Q2-001
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soil-sensor-q2-001
+  namespace: soil-sensor-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: soil-sensor-q2-001
+  template:
+    metadata:
+      labels:
+        app: soil-sensor-q2-001
+    spec:
+      containers:
+      - name: soil-sensor
+        image: soil-sensor:v1.1
+        env:
+        - name: RabbitMQ__HostName
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: RABBITMQ_HOST
+        - name: RabbitMQ__Port
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: RABBITMQ_PORT
+        - name: RabbitMQ__UserName
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: username
+        - name: RabbitMQ__Password
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: password
+        - name: RabbitMQ__QueueName
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: RABBITMQ_QUEUE
+        - name: Sensor__MinIntervalSeconds
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: SENSOR_MIN_INTERVAL
+        - name: Sensor__MaxIntervalSeconds
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: SENSOR_MAX_INTERVAL
+        - name: Sensor__Location
+          value: "q2"
+        - name: Sensor__SensorId
+          value: "soil-monitor-q2-001"
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+
+---
+# Sensor Q3-001
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soil-sensor-q3-001
+  namespace: soil-sensor-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: soil-sensor-q3-001
+  template:
+    metadata:
+      labels:
+        app: soil-sensor-q3-001
+    spec:
+      containers:
+      - name: soil-sensor
+        image: soil-sensor:v1.1
+        env:
+        - name: RabbitMQ__HostName
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: RABBITMQ_HOST
+        - name: RabbitMQ__Port
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: RABBITMQ_PORT
+        - name: RabbitMQ__UserName
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: username
+        - name: RabbitMQ__Password
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: password
+        - name: RabbitMQ__QueueName
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: RABBITMQ_QUEUE
+        - name: Sensor__MinIntervalSeconds
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: SENSOR_MIN_INTERVAL
+        - name: Sensor__MaxIntervalSeconds
+          valueFrom:
+            configMapKeyRef:
+              name: soil-sensor-base-config
+              key: SENSOR_MAX_INTERVAL
+        - name: Sensor__Location
+          value: "q3"
+        - name: Sensor__SensorId
+          value: "soil-monitor-q3-001"
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
