@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   rabbitmq:
     image: rabbitmq:3-management
@@ -20,11 +18,12 @@ services:
       timeout: 10s
       retries: 5
 
-  soil-sensor:
+  # Sensor Q1-001
+  soil-sensor-q1-001:
     build:
       context: .
       dockerfile: SoilSensor/Dockerfile
-    container_name: soil-sensor-app
+    container_name: soil-sensor-q1-001
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -39,6 +38,78 @@ services:
       - Sensor__MaxIntervalSeconds=20
       - Sensor__Location=q1
       - Sensor__SensorId=soil-monitor-q1-001
+    networks:
+      - soil-sensor-network
+    restart: unless-stopped
+
+  # Sensor Q2-001
+  soil-sensor-q2-001:
+    build:
+      context: .
+      dockerfile: SoilSensor/Dockerfile
+    container_name: soil-sensor-q2-001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__UserName=guest
+      - RabbitMQ__Password=guest
+      - RabbitMQ__QueueName=soil-moisture-data
+      - Sensor__MinIntervalSeconds=10
+      - Sensor__MaxIntervalSeconds=20
+      - Sensor__Location=q2
+      - Sensor__SensorId=soil-monitor-q2-001
+    networks:
+      - soil-sensor-network
+    restart: unless-stopped
+
+  # Sensor Q3-001
+  soil-sensor-q3-001:
+    build:
+      context: .
+      dockerfile: SoilSensor/Dockerfile
+    container_name: soil-sensor-q3-001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__UserName=guest
+      - RabbitMQ__Password=guest
+      - RabbitMQ__QueueName=soil-moisture-data
+      - Sensor__MinIntervalSeconds=10
+      - Sensor__MaxIntervalSeconds=20
+      - Sensor__Location=q3
+      - Sensor__SensorId=soil-monitor-q3-001
+    networks:
+      - soil-sensor-network
+    restart: unless-stopped
+
+  # Sensor Q4-001
+  soil-sensor-q4-001:
+    build:
+      context: .
+      dockerfile: SoilSensor/Dockerfile
+    container_name: soil-sensor-q4-001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__UserName=guest
+      - RabbitMQ__Password=guest
+      - RabbitMQ__QueueName=soil-moisture-data
+      - Sensor__MinIntervalSeconds=10
+      - Sensor__MaxIntervalSeconds=20
+      - Sensor__Location=q4
+      - Sensor__SensorId=soil-monitor-q4-001
     networks:
       - soil-sensor-network
     restart: unless-stopped
