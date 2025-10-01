@@ -108,9 +108,9 @@ func registerExchanges(ch *amqp.Channel, queue string) (<-chan amqp.Delivery, er
 			false,
 			nil,
 		); err != nil {
-			return nil, fmt.Errorf("failed to declare \"all\" exchange: %w", err)
+			return nil, fmt.Errorf("failed to declare \"%s\" exchange: %w", quadrant, err)
 		}
-	} 
+	}
 
 	return msgs, nil
 }

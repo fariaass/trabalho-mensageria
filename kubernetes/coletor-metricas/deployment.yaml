@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coletor-metricas
+  namespace: coletor-metricas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coletor-metricas
+  template:
+    metadata:
+      labels:
+        app: coletor-metricas
+    spec:
+      containers:
+      - name: coletor-metricas
+        image: container-registry.br-se1.magalu.cloud/lucas-sdb/coletor-metricas:1
+        envFrom:
+          - secretRef:
+              name: rabbitmq-credentials
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"

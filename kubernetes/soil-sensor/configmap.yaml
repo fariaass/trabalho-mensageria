@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: soil-sensor-base-config
+  namespace: soil-sensor-system
+data:
+  SENSOR_MIN_INTERVAL: "10"
+  SENSOR_MAX_INTERVAL: "20"
+  ASPNETCORE_ENVIRONMENT: "Production"

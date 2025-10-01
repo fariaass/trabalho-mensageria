@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: irrigador
+  namespace: irrigador
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: irrigador
+  template:
+    metadata:
+      labels:
+        app: irrigador
+    spec:
+      containers:
+      - name: irrigador
+        image: container-registry.br-se1.magalu.cloud/lucas-sdb/irrigador:1
+        envFrom:
+          - secretRef:
+              name: rabbitmq-credentials
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"

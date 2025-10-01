@@ -493,6 +493,7 @@ iOSInjectionProject/
 *$py.class
 
 # C extensions
+*.o
 
 # Distribution / packaging
 .Python
