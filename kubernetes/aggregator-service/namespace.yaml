@@ -4,5 +4,3 @@ metadata:
   name: aggregator-service
   labels:
     name: aggregator-service
-    app: aggregator-service
-    component: aggregation

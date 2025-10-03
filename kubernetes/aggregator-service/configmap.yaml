@@ -4,8 +4,6 @@ metadata:
   name: aggregator-service-config
   namespace: aggregator-service
 data:
-  RABBITMQ_HOST: "rabbitmq-service.rabbitmq.svc.cluster.local"
-  RABBITMQ_PORT: "5672"
   INPUT_QUEUE: "soil-moisture-data"
   OUTPUT_QUEUE: "soil-moisture-aggregated"
   AGGREGATION_PERIOD_MINUTES: "5"

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: irrigador
-        image: container-registry.br-se1.magalu.cloud/lucas-sdb/irrigador:1
+        image: fariaass/irrigador:v1.0
         envFrom:
           - secretRef:
               name: rabbitmq-credentials

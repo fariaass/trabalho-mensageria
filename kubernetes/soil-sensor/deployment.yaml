@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: soil-sensor
-        image: container-registry.br-se1.magalu.cloud/lucas-sdb/soil-sensor:1
+        image: fariaass/soil-sensor:v1.0
         envFrom:
           - secretRef:
               name: rabbitmq-credentials

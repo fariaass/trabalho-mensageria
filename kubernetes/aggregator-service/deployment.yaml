@@ -5,8 +5,6 @@ metadata:
   namespace: aggregator-service
   labels:
     app: aggregator-service
-    component: aggregation
-    version: "1.0.0"
 spec:
   replicas: 2
   selector:
@@ -16,28 +14,17 @@ spec:
     metadata:
       labels:
         app: aggregator-service
-        component: aggregation
-        version: "1.0.0"
     spec:
       containers:
       - name: aggregator-service
-        image: aggregator-service:1.0.0
+        image: fariaass/aggregator-service:v1.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
           name: health-check
-        env:
-        - name: RABBITMQ_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: rabbitmq-credentials
-              key: username
-        - name: RABBITMQ_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: rabbitmq-credentials
-              key: password
         envFrom:
+        - secretRef:
+            name: rabbitmq-credentials
         - configMapRef:
             name: aggregator-service-config
         resources:

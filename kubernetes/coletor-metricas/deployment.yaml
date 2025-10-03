@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: coletor-metricas
-        image: container-registry.br-se1.magalu.cloud/lucas-sdb/coletor-metricas:1
+        image: fariaass/coletor-metricas:v1.0
         envFrom:
           - secretRef:
               name: rabbitmq-credentials
