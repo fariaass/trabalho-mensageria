@@ -206,12 +206,12 @@ func registerIrrigators(ch *amqp.Channel) error {
 }
 
 func triggerIrrigators(ch *amqp.Channel, data []byte) error {
+	log.Printf("Received message: %s", string(data))
+
 	var msg Message
 	if err := json.Unmarshal(data, &msg); err != nil {
 		return fmt.Errorf("failed to unmarshal message content: %w", err)
 	}
-
-	log.Printf("Received message: %s", string(data))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -249,18 +249,19 @@ func triggerIrrigators(ch *amqp.Channel, data []byte) error {
 	errs := []error{}
 	for k, v := range sensorsUnderThreshold {
 		if len(v) == 1 {
+			irrigator := fmt.Sprintf("irg-%s-%s", k, v[0])
 			if err := ch.PublishWithContext(
 				ctx,
-				v[0],
-				v[0],
+				irrigator,
+				irrigator,
 				false,
 				false,
 				payload,
 			); err != nil {
-				errs = append(errs, fmt.Errorf("failed to publish message in exchange \"%s\": %w", v[0], err))
+				errs = append(errs, fmt.Errorf("failed to publish message in exchange \"%s\": %w", irrigator, err))
 			}
 
-			log.Printf("Message sent to exchange \"%s\"", v[0])
+			log.Printf("Message sent to exchange \"%s\"", irrigator)
 			continue
 		}
 		
