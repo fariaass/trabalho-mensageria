@@ -19,6 +19,9 @@ spec:
         envFrom:
           - secretRef:
               name: rabbitmq-credentials
+        env:
+          - name: PROMETHEUS_PUSHGATEWAY_HOST
+            value: pushgateway.monitoring.svc.cluster.local
         resources:
           requests:
             memory: "128Mi"
