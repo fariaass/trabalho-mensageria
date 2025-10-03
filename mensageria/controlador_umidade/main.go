@@ -29,6 +29,7 @@ type Message struct {
 
 var (
 	moistureThreshold float64
+	irrigators = strings.Split(os.Getenv("IRRIGATORS_LIST"), ",")
 )
 
 func main() {
@@ -145,7 +146,7 @@ func registerExchanges(ch *amqp.Channel) error {
 }
 
 func registerIrrigators(ch *amqp.Channel) error {
-	for i := range strings.SplitSeq(os.Getenv("IRRIGATORS_LIST"), ",") {
+	for _, i := range irrigators {
 		queue, err := ch.QueueDeclare(
 			i,
 			false,
@@ -210,7 +211,7 @@ func triggerIrrigators(ch *amqp.Channel, data []byte) error {
 		return fmt.Errorf("failed to unmarshal message content: %w", err)
 	}
 
-	log.Printf("[%s] Received message: %s", time.Now().String(), string(data))
+	log.Printf("Received message: %s", string(data))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -229,7 +230,7 @@ func triggerIrrigators(ch *amqp.Channel, data []byte) error {
 		}
 	}
 
-	if count == len(msg.Sensors) {
+	if count == len(irrigators) {
 		if err := ch.PublishWithContext(
 			ctx,
 			"all",
@@ -241,7 +242,7 @@ func triggerIrrigators(ch *amqp.Channel, data []byte) error {
 			return fmt.Errorf("failed to publish message in exchange \"all\": %w", err)
 		}
 
-		log.Printf("[%s] Message sent to exchange \"all\"", time.Now().String())
+		log.Println("Message sent to exchange \"all\"")
 		return nil
 	}
 
@@ -259,7 +260,7 @@ func triggerIrrigators(ch *amqp.Channel, data []byte) error {
 				errs = append(errs, fmt.Errorf("failed to publish message in exchange \"%s\": %w", v[0], err))
 			}
 
-			log.Printf("[%s] Message sent to exchange \"%s\"", time.Now().String(), v[0])
+			log.Printf("Message sent to exchange \"%s\"", v[0])
 			continue
 		}
 		
@@ -274,7 +275,7 @@ func triggerIrrigators(ch *amqp.Channel, data []byte) error {
 			errs = append(errs, fmt.Errorf("failed to publish message in exchange \"%s\": %w", k, err))
 		}
 
-		log.Printf("[%s] Message sent to exchange \"quadrants\" with routing key \"%s\"", time.Now().String(), k)
+		log.Printf("Message sent to exchange \"quadrants\" with routing key \"%s\"", k)
 	}
 
 	return errors.Join(errs...)
