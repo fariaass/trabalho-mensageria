@@ -210,6 +210,8 @@ func triggerIrrigators(ch *amqp.Channel, data []byte) error {
 		return fmt.Errorf("failed to unmarshal message content: %w", err)
 	}
 
+	log.Printf("[%s] Received message: %s", time.Now().String(), string(data))
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -239,6 +241,7 @@ func triggerIrrigators(ch *amqp.Channel, data []byte) error {
 			return fmt.Errorf("failed to publish message in exchange \"all\": %w", err)
 		}
 
+		log.Printf("[%s] Message sent to exchange \"all\"", time.Now().String())
 		return nil
 	}
 
@@ -256,6 +259,7 @@ func triggerIrrigators(ch *amqp.Channel, data []byte) error {
 				errs = append(errs, fmt.Errorf("failed to publish message in exchange \"%s\": %w", v[0], err))
 			}
 
+			log.Printf("[%s] Message sent to exchange \"%s\"", time.Now().String(), v[0])
 			continue
 		}
 		
@@ -269,6 +273,8 @@ func triggerIrrigators(ch *amqp.Channel, data []byte) error {
 		); err != nil {
 			errs = append(errs, fmt.Errorf("failed to publish message in exchange \"%s\": %w", k, err))
 		}
+
+		log.Printf("[%s] Message sent to exchange \"quadrants\" with routing key \"%s\"", time.Now().String(), k)
 	}
 
 	return errors.Join(errs...)

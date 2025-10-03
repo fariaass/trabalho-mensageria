@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: irrigador
-        image: fariaass/irrigador:v1.0
+        image: fariaass/irrigador:v1.2
         envFrom:
           - secretRef:
               name: rabbitmq-credentials
@@ -47,7 +47,7 @@ spec:
     spec:
       containers:
       - name: irrigador
-        image: fariaass/irrigador:v1.0
+        image: fariaass/irrigador:v1.2
         envFrom:
           - secretRef:
               name: rabbitmq-credentials
@@ -79,7 +79,7 @@ spec:
     spec:
       containers:
       - name: irrigador
-        image: fariaass/irrigador:v1.0
+        image: fariaass/irrigador:v1.2
         envFrom:
           - secretRef:
               name: rabbitmq-credentials
@@ -111,7 +111,7 @@ spec:
     spec:
       containers:
       - name: irrigador
-        image: fariaass/irrigador:v1.0
+        image: fariaass/irrigador:v1.2
         envFrom:
           - secretRef:
               name: rabbitmq-credentials
