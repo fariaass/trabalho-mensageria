@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: controlador-umidade
-        image: fariaass/controlador-umidade:v1.1
+        image: fariaass/controlador-umidade:v1.2
         envFrom:
         - secretRef:
             name: rabbitmq-credentials
