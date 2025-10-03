@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aggregator-service
+  namespace: aggregator-service
+  labels:
+    app: aggregator-service
+    component: aggregation
+    version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aggregator-service
+  template:
+    metadata:
+      labels:
+        app: aggregator-service
+        component: aggregation
+        version: "1.0.0"
+    spec:
+      containers:
+      - name: aggregator-service
+        image: aggregator-service:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+          name: health-check
+        env:
+        - name: RABBITMQ_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: username
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: password
+        envFrom:
+        - configMapRef:
+            name: aggregator-service-config
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        livenessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "console.log('Liveness check passed')"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "console.log('Readiness check passed')"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

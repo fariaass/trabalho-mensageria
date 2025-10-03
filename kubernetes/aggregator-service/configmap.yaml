@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aggregator-service-config
+  namespace: aggregator-service
+data:
+  RABBITMQ_HOST: "rabbitmq-service.rabbitmq.svc.cluster.local"
+  RABBITMQ_PORT: "5672"
+  INPUT_QUEUE: "soil-moisture-data"
+  OUTPUT_QUEUE: "soil-moisture-aggregated"
+  AGGREGATION_PERIOD_MINUTES: "5"
+  AGGREGATION_TOLERANCE_SECONDS: "30"
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  MAX_MESSAGES_PER_MINUTE: "100"
+  MAX_MEMORY_MB: "50"
+  MAX_LATENCY_SECONDS: "2"
