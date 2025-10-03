@@ -90,7 +90,7 @@ main_loop:
 func registerConsumer(ch *amqp.Channel, queue string) (<-chan amqp.Delivery, error) {
 	q, err := ch.QueueDeclare(
 		queue,
-		false,
+		true,
 		false,
 		false,
 		false,
