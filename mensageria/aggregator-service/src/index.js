@@ -5,12 +5,7 @@ const TemporalAggregator = require('./aggregator/temporal');
 const logger = require('./utils/logger');
 
 /**
- * Serviço de Agregação de Dados de Sensores Simplificado
- * 
- * Implementa agregação temporal e publicação de dados simplificados:
- * - Consumo de dados de sensores
- * - Agregação temporal por localização
- * - Publicação de dados simplificados
+ * Serviço de Agregação de Dados de Sensores
  */
 class AggregatorService {
     constructor() {
@@ -32,17 +27,15 @@ class AggregatorService {
     }
 
     /**
-     * Configura handlers de eventos entre componentes
+     * Configura handlers de eventos
      */
     setupEventHandlers() {
-        // Consumer -> Aggregator
         this.consumer.on('dataReceived', (sensorData) => {
             this.stats.messagesReceived++;
             this.stats.lastActivity = new Date();
             this.aggregator.processData(sensorData);
         });
 
-        // Aggregator -> Producer
         this.aggregator.on('dataAggregated', async (aggregatedData) => {
             try {
                 await this.producer.publish(aggregatedData);
@@ -58,13 +51,10 @@ class AggregatorService {
             }
         });
 
-        // Consumer error handling
         this.consumer.on('maxRetriesReached', () => {
             logger.error('Consumer max retries reached. Service may be unstable.');
             this.stats.errors++;
         });
-
-        // Graceful shutdown handlers
         process.on('SIGINT', () => this.shutdown('SIGINT'));
         process.on('SIGTERM', () => this.shutdown('SIGTERM'));
         process.on('uncaughtException', (error) => {
@@ -79,15 +69,13 @@ class AggregatorService {
     }
 
     /**
-     * Configura health checks e monitoramento
+     * Configura health checks
      */
     setupHealthChecks() {
-        // Health check a cada 30 segundos
         setInterval(() => {
             this.logHealthStatus();
         }, 30000);
 
-        // Monitoramento de performance a cada 5 minutos
         setInterval(() => {
             this.logPerformanceMetrics();
         }, 300000);
@@ -101,14 +89,11 @@ class AggregatorService {
             logger.info('Starting Aggregator Service', {
                 version: '1.0.0',
                 config: {
-                    periodMinutes: config.aggregation.periodMinutes,
-                    toleranceSeconds: config.aggregation.toleranceSeconds,
                     inputQueue: config.rabbitmq.inputQueue,
                     outputQueue: config.rabbitmq.outputQueue
                 }
             });
 
-            // Iniciar consumer
             await this.consumer.start();
             
             this.isRunning = true;
@@ -130,7 +115,7 @@ class AggregatorService {
     }
 
     /**
-     * Para o serviço de forma graceful
+     * Para o serviço
      * @param {string} signal - sinal que causou o shutdown
      */
     async shutdown(signal) {
@@ -142,22 +127,11 @@ class AggregatorService {
         this.isRunning = false;
 
         try {
-            // Processar dados pendentes no agregador
             this.aggregator.forceProcessAll();
-            
-            // Aguardar um pouco para processar dados pendentes
             await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Fechar agregador
             this.aggregator.close();
-            
-            // Fechar producer
             await this.producer.close();
-            
-            // Fechar consumer
             await this.consumer.close();
-            
-            // Log final de contadores
             this.logFinalStats();
             
             logger.info('Aggregator Service stopped gracefully');
@@ -173,7 +147,7 @@ class AggregatorService {
     }
 
     /**
-     * Log do status de saúde do serviço
+     * Log do status de saúde
      */
     logHealthStatus() {
         const uptime = Date.now() - this.startTime.getTime();
@@ -196,7 +170,7 @@ class AggregatorService {
     }
 
     /**
-     * Log de monitoramento de performance
+     * Log de performance
      */
     logPerformanceMetrics() {
         const uptime = Date.now() - this.startTime.getTime();
@@ -213,7 +187,7 @@ class AggregatorService {
     }
 
     /**
-     * Log de contadores finais
+     * Log de estatísticas finais
      */
     logFinalStats() {
         const uptime = Date.now() - this.startTime.getTime();
@@ -234,6 +208,5 @@ class AggregatorService {
     }
 }
 
-// Inicializar e iniciar o serviço
 const service = new AggregatorService();
 service.start();

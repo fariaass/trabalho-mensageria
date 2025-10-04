@@ -3,55 +3,42 @@ const AggregatedData = require('../models/aggregated');
 const logger = require('../utils/logger');
 
 /**
- * Agregador Temporal de Dados de Sensores
- * Implementa RB002: Agregação Temporal e RB003: Agregação por Localização
+ * Agregador de Dados de Sensores
  * 
  * Características:
- * - Agrupa dados por período configurável (padrão: 5 minutos)
- * - Tolerância de agrupamento (±30 segundos)
- * - Processamento independente por localização (q1, q2, q3, q4)
- * - Cálculo de média de umidade por sensor
- * - Emissão de eventos para dados agregados
+ * - Coleta dados de sensores em array global
+ * - Processa agregação por timer fixo (10 segundos)
+ * - Agrupa por localização e calcula médias por sensor
+ * - Emite eventos com dados agregados
  */
 class TemporalAggregator extends EventEmitter {
     constructor(config) {
         super();
-        this.periodMinutes = config.periodMinutes;
-        this.toleranceSeconds = config.toleranceSeconds;
-        this.data = new Map(); // Armazena dados por período e localização
-        this.timers = new Map(); // Timers para processamento de períodos
+        this.aggregationIntervalSeconds = config.aggregationIntervalSeconds || 10;
+        this.data = [];
+        this.timer = null;
         this.stats = {
             totalDataPoints: 0,
             totalPeriods: 0,
-            totalLocations: 0,
             startTime: new Date()
         };
+        
+        this.startAggregationTimer();
     }
 
     /**
      * Processa dados de sensor recebidos
-     * Implementa RB002 e RB003
      * @param {SensorData} sensorData - dados do sensor
      */
     processData(sensorData) {
         try {
-            const periodKey = this.getPeriodKey(sensorData.timestamp, sensorData.location);
-            
-            // Inicializar array de dados para o período se não existir
-            if (!this.data.has(periodKey)) {
-                this.data.set(periodKey, []);
-                this.scheduleProcessing(periodKey);
-            }
-            
-            // Adicionar dados ao período
-            this.data.get(periodKey).push(sensorData);
+            this.data.push(sensorData);
             this.stats.totalDataPoints++;
 
-            logger.debug('Data added to aggregation period', {
-                periodKey,
+            logger.debug('Data added to aggregation', {
                 location: sensorData.location,
                 sensorId: sensorData.sensorId,
-                dataPointsInPeriod: this.data.get(periodKey).length
+                totalDataPoints: this.data.length
             });
 
         } catch (error) {
@@ -64,153 +51,90 @@ class TemporalAggregator extends EventEmitter {
     }
 
     /**
-     * Gera chave única para período e localização
-     * @param {Date} timestamp - timestamp dos dados
-     * @param {string} location - localização (q1, q2, q3, q4)
-     * @returns {string} chave do período
+     * Inicia timer de agregação
      */
-    getPeriodKey(timestamp, location) {
-        const periodStart = new Date(timestamp);
+    startAggregationTimer() {
+        this.timer = setInterval(() => {
+            this.processAggregation();
+        }, this.aggregationIntervalSeconds * 1000);
         
-        // Arredondar para o início do período
-        periodStart.setMinutes(Math.floor(periodStart.getMinutes() / this.periodMinutes) * this.periodMinutes);
-        periodStart.setSeconds(0, 0);
-        
-        return `${location}-${periodStart.toISOString()}`;
-    }
-
-    /**
-     * Agenda processamento do período
-     * @param {string} periodKey - chave do período
-     */
-    scheduleProcessing(periodKey) {
-        const [location, periodStartStr] = periodKey.split('-');
-        const periodStart = new Date(periodStartStr);
-        const periodEnd = new Date(periodStart.getTime() + this.periodMinutes * 60 * 1000);
-        
-        // Calcular delay: fim do período + tolerância
-        const delay = periodEnd.getTime() - Date.now() + (this.toleranceSeconds * 1000);
-        
-        logger.debug('Scheduling period processing', {
-            periodKey,
-            location,
-            periodStart: periodStart.toISOString(),
-            periodEnd: periodEnd.toISOString(),
-            delayMs: Math.max(0, delay)
+        logger.info('Aggregation timer started', {
+            intervalSeconds: this.aggregationIntervalSeconds
         });
-
-        const timer = setTimeout(() => {
-            this.processPeriod(periodKey, periodStart, periodEnd, location);
-        }, Math.max(0, delay));
-        
-        this.timers.set(periodKey, timer);
     }
 
     /**
-     * Processa período completo e gera dados agregados
-     * Implementa cálculo de média de umidade por sensor
-     * @param {string} periodKey - chave do período
-     * @param {Date} periodStart - início do período
-     * @param {Date} periodEnd - fim do período
-     * @param {string} location - localização
+     * Processa agregação de todos os dados
      */
-    processPeriod(periodKey, periodStart, periodEnd, location) {
+    processAggregation() {
+        if (this.data.length === 0) {
+            return;
+        }
+
         try {
-            const sensorData = this.data.get(periodKey) || [];
-            
-            // RB007: Tratamento de Dados Insuficientes
-            if (sensorData.length === 0) {
-                logger.warn('Period processed with no data', {
-                    periodKey,
-                    location,
-                    periodStart: periodStart.toISOString(),
-                    periodEnd: periodEnd.toISOString()
-                });
-            } else if (sensorData.length === 1) {
-                logger.info('Period processed with single data point', {
-                    periodKey,
-                    location,
-                    dataPoints: sensorData.length
-                });
-            }
+            const groupedData = {};
+            this.data.forEach(sensorData => {
+                if (!groupedData[sensorData.location]) {
+                    groupedData[sensorData.location] = [];
+                }
+                groupedData[sensorData.location].push(sensorData);
+            });
 
-            // Processar apenas se houver dados válidos
-            if (sensorData.length > 0) {
+            Object.keys(groupedData).forEach(location => {
+                const sensorData = groupedData[location];
+                const periodStart = new Date();
+                const periodEnd = new Date(periodStart.getTime() + this.aggregationIntervalSeconds * 1000);
+
                 const aggregated = new AggregatedData(periodStart, periodEnd, location, sensorData);
-                
-                // Validar dados agregados
                 aggregated.validate();
-                
-                // Atualizar contadores
-                this.stats.totalPeriods++;
-                this.stats.totalLocations = Math.max(this.stats.totalLocations, 
-                    new Set([...this.data.keys()].map(key => key.split('-')[0])).size);
 
-                // Emitir evento com dados agregados
+                this.stats.totalPeriods++;
                 this.emit('dataAggregated', aggregated);
-                
+
                 logger.info('Period processed successfully', {
                     location,
                     dataPoints: sensorData.length,
                     sensorCount: aggregated.sensorCount
                 });
-            }
-            
-            // Limpar dados processados
-            this.data.delete(periodKey);
-            this.timers.delete(periodKey);
+            });
+
+            this.data = [];
 
         } catch (error) {
-            logger.error('Error processing period', {
+            logger.error('Error processing aggregation', {
                 error: error.message,
-                periodKey,
-                location,
-                dataPoints: this.data.get(periodKey)?.length || 0
+                dataPoints: this.data.length
             });
-            
-            // Limpar dados mesmo em caso de erro
-            this.data.delete(periodKey);
-            this.timers.delete(periodKey);
         }
     }
 
+
     /**
-     * Obtém contadores do agregador
-     * @returns {Object} contadores atuais
+     * Obtém estatísticas do agregador
+     * @returns {Object} estatísticas atuais
      */
     getStats() {
         const uptime = Date.now() - this.stats.startTime.getTime();
-        const activePeriods = this.data.size;
-        const activeTimers = this.timers.size;
 
         return {
             ...this.stats,
             uptimeMs: uptime,
             uptimeMinutes: Math.round(uptime / 60000),
-            activePeriods,
-            activeTimers,
-            periodMinutes: this.periodMinutes,
-            toleranceSeconds: this.toleranceSeconds
+            activeDataPoints: this.data.length,
+            aggregationIntervalSeconds: this.aggregationIntervalSeconds
         };
     }
 
     /**
-     * Força processamento de todos os períodos pendentes
-     * Útil para shutdown graceful
+     * Força processamento de todos os dados pendentes
      */
     forceProcessAll() {
-        logger.info('Forcing processing of all pending periods', {
-            activePeriods: this.data.size
+        logger.info('Forcing processing of all pending data', {
+            activeDataPoints: this.data.length
         });
 
-        for (const [periodKey, sensorData] of this.data.entries()) {
-            if (sensorData.length > 0) {
-                const [location, periodStartStr] = periodKey.split('-');
-                const periodStart = new Date(periodStartStr);
-                const periodEnd = new Date(periodStart.getTime() + this.periodMinutes * 60 * 1000);
-                
-                this.processPeriod(periodKey, periodStart, periodEnd, location);
-            }
+        if (this.data.length > 0) {
+            this.processAggregation();
         }
     }
 
@@ -219,21 +143,16 @@ class TemporalAggregator extends EventEmitter {
      */
     close() {
         logger.info('Closing temporal aggregator', {
-            activePeriods: this.data.size,
-            activeTimers: this.timers.size
+            activeDataPoints: this.data.length
         });
 
-        // Cancelar todos os timers
-        for (const timer of this.timers.values()) {
-            clearTimeout(timer);
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
         }
-        this.timers.clear();
 
-        // Processar dados pendentes
         this.forceProcessAll();
-
-        // Limpar dados
-        this.data.clear();
+        this.data = [];
 
         logger.info('Temporal aggregator closed');
     }

@@ -2,9 +2,6 @@ require('dotenv').config();
 
 /**
  * Configuração do Serviço de Agregação
- * Implementa RB008: Configuração do Sistema
- * 
- * Configurações obrigatórias e opcionais conforme regras de negócio
  */
 module.exports = {
     rabbitmq: {
@@ -16,8 +13,7 @@ module.exports = {
         outputQueue: process.env.OUTPUT_QUEUE || 'soil-moisture-sensors'
     },
     aggregation: {
-        periodMinutes: parseInt(process.env.AGGREGATION_PERIOD_MINUTES) || 5,
-        toleranceSeconds: parseInt(process.env.AGGREGATION_TOLERANCE_SECONDS) || 30
+        aggregationIntervalSeconds: parseInt(process.env.AGGREGATION_INTERVAL_SECONDS) || 10
     },
     logging: {
         level: process.env.LOG_LEVEL || 'info',

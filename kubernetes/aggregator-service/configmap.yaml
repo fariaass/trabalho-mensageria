@@ -5,11 +5,7 @@ metadata:
   namespace: aggregator-service
 data:
   INPUT_QUEUE: "soil-moisture-data"
-  OUTPUT_QUEUE: "soil-moisture-aggregated"
-  AGGREGATION_PERIOD_MINUTES: "5"
-  AGGREGATION_TOLERANCE_SECONDS: "30"
+  OUTPUT_QUEUE: "soil-moisture-sensors"
+  AGGREGATION_INTERVAL_SECONDS: "10"
   LOG_LEVEL: "info"
   LOG_FORMAT: "json"
-  MAX_MESSAGES_PER_MINUTE: "100"
-  MAX_MEMORY_MB: "50"
-  MAX_LATENCY_SECONDS: "2"

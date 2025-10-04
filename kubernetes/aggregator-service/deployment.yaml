@@ -22,6 +22,17 @@ spec:
         ports:
         - containerPort: 3000
           name: health-check
+        env:
+        - name: RABBITMQ_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: RABBITMQ_USERNAME
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: RABBITMQ_PASSWORD
         envFrom:
         - secretRef:
             name: rabbitmq-credentials
