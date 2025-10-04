@@ -18,18 +18,18 @@ var configuration = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
-// Obter configurações do RabbitMQ
-var rabbitHost = configuration["RabbitMQ:HostName"] ?? "localhost";
-var queueName = configuration["RabbitMQ:QueueName"] ?? "soil-moisture-data";
-var userName = configuration["RabbitMQ:UserName"] ?? "guest";
-var password = configuration["RabbitMQ:Password"] ?? "guest";
+// Obter configurações do RabbitMQ (priorizar variáveis de ambiente)
+var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? configuration["RabbitMQ:HostName"] ?? "localhost";
+var queueName = Environment.GetEnvironmentVariable("RABBITMQ_QUEUE") ?? configuration["RabbitMQ:QueueName"] ?? "soil-moisture-data";
+var userName = Environment.GetEnvironmentVariable("RABBITMQ_USERNAME") ?? configuration["RabbitMQ:UserName"] ?? "guest";
+var password = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? configuration["RabbitMQ:Password"] ?? "guest";
 var rabbitPort = 5672;
-if (int.TryParse(configuration["RabbitMQ:Port"], out var port))
+if (int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT") ?? configuration["RabbitMQ:Port"], out var port))
     rabbitPort = port;
 
-// Obter configurações do sensor
-var minInterval = int.Parse(configuration["Sensor:MinIntervalSeconds"] ?? "10");
-var maxInterval = int.Parse(configuration["Sensor:MaxIntervalSeconds"] ?? "20");
+// Obter configurações do sensor (priorizar variáveis de ambiente)
+var minInterval = int.Parse(Environment.GetEnvironmentVariable("SENSOR_MIN_INTERVAL_SECONDS") ?? configuration["Sensor:MinIntervalSeconds"] ?? "10");
+var maxInterval = int.Parse(Environment.GetEnvironmentVariable("SENSOR_MAX_INTERVAL_SECONDS") ?? configuration["Sensor:MaxIntervalSeconds"] ?? "20");
 
 LogInfo($"Configurações carregadas:");
 LogInfo($"  RabbitMQ Host: {rabbitHost}:{rabbitPort}");
@@ -38,8 +38,8 @@ LogInfo($"  Usuário: {userName}");
 LogInfo($"  Intervalo de leitura: {minInterval}-{maxInterval} segundos");
 
 // Obter configurações do sensor
-var sensorId = configuration["Sensor:SensorId"] ?? "soil-monitor-001";
-var location = configuration["Sensor:Location"] ?? "sector-A";
+var sensorId = Environment.GetEnvironmentVariable("SENSOR_ID") ?? configuration["Sensor:SensorId"] ?? "soil-monitor-001";
+var location = Environment.GetEnvironmentVariable("SENSOR_LOCATION") ?? configuration["Sensor:Location"] ?? "sector-A";
 
 LogInfo($"Sensor ID: {sensorId}");
 LogInfo($"Localização: {location}");
@@ -50,8 +50,31 @@ var soilSensorService = new SoilSensorService(sensorId, location);
 LogInfo("SoilSensorService inicializado");
 
 LogInfo("Conectando ao RabbitMQ...");
-var rabbitProducer = await RabbitMqProducer.CreateAsync(rabbitHost, rabbitPort, queueName, userName, password);
-LogInfo("Conexão com RabbitMQ estabelecida com sucesso!");
+RabbitMqProducer rabbitProducer = null;
+int maxRetries = 10;
+int retryDelay = 5000; // 5 segundos
+
+for (int attempt = 1; attempt <= maxRetries; attempt++)
+{
+    try
+    {
+        LogInfo($"Tentativa {attempt}/{maxRetries} de conexão com RabbitMQ...");
+        rabbitProducer = await RabbitMqProducer.CreateAsync(rabbitHost, rabbitPort, queueName, userName, password);
+        LogInfo("Conexão com RabbitMQ estabelecida com sucesso!");
+        break;
+    }
+    catch (Exception ex)
+    {
+        LogError($"Tentativa {attempt} falhou: {ex.Message}");
+        if (attempt == maxRetries)
+        {
+            LogError("Todas as tentativas de conexão falharam. Encerrando aplicação.");
+            return;
+        }
+        LogInfo($"Aguardando {retryDelay/1000} segundos antes da próxima tentativa...");
+        Thread.Sleep(retryDelay);
+    }
+}
 
 // Verificar se a fila está pronta
 LogInfo("Verificando se a fila está pronta...");

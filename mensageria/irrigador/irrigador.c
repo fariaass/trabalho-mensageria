@@ -85,7 +85,7 @@ int main() {
     amqp_channel_open(conn, 1);
     die_on_amqp_error(amqp_get_rpc_reply(conn), "opening channel");
 
-    amqp_queue_declare(conn, 1, amqp_cstring_bytes(queue_name), 1, 0, 0, 1, amqp_empty_table);
+    amqp_queue_declare(conn, 1, amqp_cstring_bytes(queue_name), 0, 0, 0, 0, amqp_empty_table);
     die_on_amqp_error(amqp_get_rpc_reply(conn), "declaring queue");
 
     amqp_basic_consume(conn, 1, amqp_cstring_bytes(queue_name), amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
