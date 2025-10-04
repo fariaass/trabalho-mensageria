@@ -1,0 +1,251 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - mensageria-network
+
+  prometheus-pushgateway:
+    image: prom/pushgateway:latest
+    container_name: prometheus-pushgateway
+    ports:
+      - "9091:9091"
+    networks:
+      - mensageria-network
+
+  soil-sensor-q1:
+    build: ./mensageria/soil_sensor
+    container_name: soil-sensor-q1
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: soil-moisture-data
+      SENSOR_ID: soil-monitor-q1-001
+      SENSOR_LOCATION: q1
+      SENSOR_MIN_INTERVAL_SECONDS: 8
+      SENSOR_MAX_INTERVAL_SECONDS: 15
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  soil-sensor-q2:
+    build: ./mensageria/soil_sensor
+    container_name: soil-sensor-q2
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: soil-moisture-data
+      SENSOR_ID: soil-monitor-q2-001
+      SENSOR_LOCATION: q2
+      SENSOR_MIN_INTERVAL_SECONDS: 12
+      SENSOR_MAX_INTERVAL_SECONDS: 18
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  soil-sensor-q3:
+    build: ./mensageria/soil_sensor
+    container_name: soil-sensor-q3
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: soil-moisture-data
+      SENSOR_ID: soil-monitor-q3-001
+      SENSOR_LOCATION: q3
+      SENSOR_MIN_INTERVAL_SECONDS: 10
+      SENSOR_MAX_INTERVAL_SECONDS: 20
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  soil-sensor-q4:
+    build: ./mensageria/soil_sensor
+    container_name: soil-sensor-q4
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: soil-moisture-data
+      SENSOR_ID: soil-monitor-q4-001
+      SENSOR_LOCATION: q4
+      SENSOR_MIN_INTERVAL_SECONDS: 15
+      SENSOR_MAX_INTERVAL_SECONDS: 25
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  aggregator-service:
+    build: ./mensageria/aggregator-service
+    container_name: aggregator-service
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      INPUT_QUEUE: soil-moisture-data
+      OUTPUT_QUEUE: soil-moisture-sensors
+      AGGREGATION_INTERVAL_SECONDS: 10
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  controlador-umidade:
+    build: ./mensageria/controlador_umidade
+    container_name: controlador-umidade
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: soil-moisture-sensors
+      MOISTURE_THRESHOLD: 30.0
+      IRRIGATORS_LIST: irg-q1-001,irg-q2-001,irg-q3-001,irg-q4-001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  irrigador-q1:
+    build: ./mensageria/irrigador
+    container_name: irrigador-q1
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: irg-q1-001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  irrigador-q2:
+    build: ./mensageria/irrigador
+    container_name: irrigador-q2
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: irg-q2-001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  irrigador-q3:
+    build: ./mensageria/irrigador
+    container_name: irrigador-q3
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: irg-q3-001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  irrigador-q4:
+    build: ./mensageria/irrigador
+    container_name: irrigador-q4
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: irg-q4-001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  monitoramento-maquinas:
+    build: ./mensageria/monitoramento_maquinas
+    container_name: monitoramento-maquinas
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: machines-metrics
+      MACHINE_NAME: machine-001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+  coletor-metricas:
+    build: ./mensageria/coletor_metricas
+    container_name: coletor-metricas
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      RABBITMQ_QUEUE: machines-metrics
+      PROMETHEUS_PUSHGATEWAY_HOST: prometheus-pushgateway:9091
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      prometheus-pushgateway:
+        condition: service_started
+    networks:
+      - mensageria-network
+    restart: unless-stopped
+
+networks:
+  mensageria-network:
+    driver: bridge
