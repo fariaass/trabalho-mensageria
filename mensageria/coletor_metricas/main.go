@@ -22,7 +22,7 @@ const (
 
 var (
 	registry = prometheus.NewRegistry()
-	pusher   = push.New(os.Getenv("PROMETHEUS_PUSHGATEWAY_HOST"), "machines_monitoring").Gatherer(registry)
+	pusher   = push.New(fmt.Sprintf("%s:%s", os.Getenv("PROMETHEUS_PUSHGATEWAY_HOST"), os.Getenv("PROMETHEUS_PUSHGATEWAY_PORT")), "machines_monitoring").Gatherer(registry)
 
 	latitudeMetric = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{

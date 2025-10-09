@@ -15,13 +15,15 @@ spec:
     spec:
       containers:
       - name: coletor-metricas
-        image: fariaass/coletor-metricas:v1.0
+        image: fariaass/coletor-metricas:v1.1 
         envFrom:
           - secretRef:
               name: rabbitmq-credentials
         env:
           - name: PROMETHEUS_PUSHGATEWAY_HOST
             value: pushgateway.monitoring.svc.cluster.local
+          - name: PROMETHEUS_PUSHGATEWAY_PORT
+            value: "9091"
         resources:
           requests:
             memory: "128Mi"

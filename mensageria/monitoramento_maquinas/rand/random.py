@@ -1,8 +1,8 @@
 import random
 
 def randomCoordinates():
-    latitude = random.uniform(60, 80)
-    longitude = random.uniform(60, 80)
+    latitude = random.uniform(11, 19) * -1
+    longitude = random.uniform(47, 58) * -1
 
     return latitude, longitude
 
